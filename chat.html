@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claro.direct — Talk to Claro</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0a0907;
+  --paper:#faf8f4;
+  --blue:#185FA5;
+  --blue-light:#E6F1FB;
+  --green:#1D9E75;
+  --green-light:#E1F5EE;
+  --red:#C5372C;
+  --mid:#6b6760;
+  --border:#2a2825;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--sans);background:var(--ink);color:var(--paper);}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:340px 1fr;height:100vh;overflow:hidden;}
+
+/* ── LEFT PANEL ── */
+.left{background:#0d0c0a;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:32px 28px;}
+.brand{margin-bottom:40px;}
+.brand-name{font-family:var(--serif);font-size:22px;font-weight:300;letter-spacing:0.15em;text-transform:uppercase;color:var(--paper);margin-bottom:3px;}
+.brand-url{font-size:11px;color:var(--mid);letter-spacing:0.1em;}
+.brand-tag{font-size:12px;color:var(--mid);margin-top:8px;line-height:1.5;}
+
+.left-section{margin-bottom:32px;}
+.ls-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--mid);margin-bottom:14px;}
+
+.quick-btn{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:4px;border:1px solid var(--border);background:transparent;color:#c8bfb0;font-family:var(--sans);font-size:12px;cursor:pointer;transition:all 0.2s;margin-bottom:6px;line-height:1.4;}
+.quick-btn:hover{border-color:var(--blue);color:var(--paper);background:rgba(24,95,165,0.08);}
+
+.context-pills{display:flex;flex-direction:column;gap:6px;}
+.pill{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:4px;background:rgba(250,248,244,0.04);font-size:11px;color:var(--mid);}
+.pill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+.left-footer{margin-top:auto;padding-top:20px;border-top:1px solid var(--border);}
+.lf-text{font-size:11px;color:var(--mid);line-height:1.6;}
+.lf-text a{color:var(--blue);text-decoration:none;}
+
+/* ── RIGHT / CHAT ── */
+.chat-wrap{display:flex;flex-direction:column;height:100vh;}
+
+.chat-header{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.ch-left{display:flex;align-items:center;gap:12px;}
+.ch-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.ch-name{font-size:15px;font-weight:500;color:var(--paper);}
+.ch-status{font-size:11px;color:var(--mid);margin-top:1px;display:flex;align-items:center;gap:5px;}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.ch-right{font-size:11px;color:var(--mid);}
+
+.messages{flex:1;overflow-y:auto;padding:28px;display:flex;flex-direction:column;gap:20px;scroll-behavior:smooth;}
+.messages::-webkit-scrollbar{width:4px;}
+.messages::-webkit-scrollbar-track{background:transparent;}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.msg{display:flex;flex-direction:column;max-width:75%;animation:msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;}
+@keyframes msgIn{from{opacity:0;transform:translateY(10px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg.assistant{align-self:flex-start;align-items:flex-start;}
+.msg.system-msg{align-self:center;align-items:center;max-width:90%;}
+
+.bubble{padding:14px 18px;border-radius:18px;font-size:14px;line-height:1.7;}
+.msg.user .bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px;}
+.msg.assistant .bubble{background:#1a1916;color:#e8e3da;border-bottom-left-radius:4px;border:1px solid var(--border);}
+.msg.system-msg .bubble{background:rgba(250,248,244,0.05);color:var(--mid);font-size:11px;border-radius:8px;text-align:center;padding:8px 16px;}
+
+.bubble strong{color:var(--paper);font-weight:600;}
+.bubble em{font-style:italic;color:#a89f96;}
+
+.msg-time{font-size:10px;color:var(--mid);margin-top:4px;padding:0 4px;}
+
+/* typing */
+.typing-wrap{display:flex;align-items:center;gap:5px;padding:14px 18px;background:#1a1916;border-radius:18px;border-bottom-left-radius:4px;border:1px solid var(--border);width:fit-content;}
+.td{width:7px;height:7px;border-radius:50%;background:#555;animation:tb 1.2s infinite;}
+.td:nth-child(2){animation-delay:0.2s;}
+.td:nth-child(3){animation-delay:0.4s;}
+@keyframes tb{0%,60%,100%{transform:translateY(0);background:#555;}30%{transform:translateY(-5px);background:#888;}}
+
+/* capture card */
+.capture-card{background:#0d0c0a;border:1px solid var(--blue);border-radius:12px;padding:18px;margin-top:4px;max-width:340px;}
+.cc-title{font-family:var(--serif);font-size:16px;font-weight:300;color:var(--paper);margin-bottom:6px;}
+.cc-sub{font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.5;}
+.cc-input{width:100%;padding:10px 14px;border-radius:4px;border:1px solid var(--border);background:rgba(250,248,244,0.06);color:var(--paper);font-family:var(--sans);font-size:13px;outline:none;margin-bottom:8px;transition:border-color 0.2s;}
+.cc-input:focus{border-color:var(--blue);}
+.cc-input::placeholder{color:var(--mid);}
+.cc-btn{width:100%;padding:10px;border-radius:4px;background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;transition:all 0.2s;}
+.cc-btn:hover{background:#1470b8;}
+.cc-note{font-size:10px;color:var(--mid);margin-top:6px;text-align:center;}
+
+/* input */
+.input-area{padding:20px 28px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.chat-input{flex:1;background:#1a1916;border:1px solid var(--border);border-radius:24px;padding:13px 20px;font-size:14px;font-family:var(--sans);color:var(--paper);outline:none;resize:none;max-height:120px;line-height:1.5;transition:border-color 0.2s;}
+.chat-input:focus{border-color:var(--blue);}
+.chat-input::placeholder{color:var(--mid);}
+.send-btn{width:44px;height:44px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:all 0.2s;}
+.send-btn:hover{background:#1470b8;transform:scale(1.05);}
+.send-btn:disabled{background:#333;cursor:not-allowed;transform:none;}
+
+.input-hint{font-size:10px;color:var(--mid);text-align:center;padding:0 28px 12px;flex-shrink:0;}
+
+/* copyright */
+.copyright{font-size:10px;color:var(--mid);text-align:center;padding:8px;border-top:1px solid var(--border);flex-shrink:0;letter-spacing:0.05em;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-name">Claro</div>
+      <div class="brand-url">claro.direct</div>
+      <div class="brand-tag">Operational intelligence<br>for growing businesses.</div>
+    </div>
+
+    <div class="left-section">
+      <div class="ls-title">Ask me anything</div>
+      <button class="quick-btn" onclick="askQuick('How does Claro actually work?')">How does Claro actually work?</button>
+      <button class="quick-btn" onclick="askQuick('Is this right for my Shopify store?')">Is this right for my Shopify store?</button>
+      <button class="quick-btn" onclick="askQuick('What does it cost and what do I get?')">What does it cost and what do I get?</button>
+      <button class="quick-btn" onclick="askQuick('How long does setup take?')">How long does setup take?</button>
+      <button class="quick-btn" onclick="askQuick('What makes Claro different from a dashboard?')">What makes Claro different from a dashboard?</button>
+      <button class="quick-btn" onclick="askQuick('Can you show me a real example?')">Can you show me a real example?</button>
+    </div>
+
+    <div class="left-section">
+      <div class="ls-title">What Claro does</div>
+      <div class="context-pills">
+        <div class="pill"><div class="pill-dot" style="background:var(--blue);"></div>Adaptive storefront — updates daily</div>
+        <div class="pill"><div class="pill-dot" style="background:var(--green);"></div>Plain English brief — every morning</div>
+        <div class="pill"><div class="pill-dot" style="background:#BA7517;"></div>Signal detection — runs automatically</div>
+        <div class="pill"><div class="pill-dot" style="background:#993556;"></div>No dashboards — just decisions</div>
+      </div>
+    </div>
+
+    <div class="left-footer">
+      <div class="lf-text">Ready to see it with your data?<br>Book a 30-minute call at <a href="mailto:hello@claro.direct">hello@claro.direct</a></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-wrap">
+    <div class="chat-header">
+      <div class="ch-left">
+        <div class="ch-avatar">◎</div>
+        <div>
+          <div class="ch-name">Claro Intelligence</div>
+          <div class="ch-status"><div class="status-dot"></div>Online — powered by AI</div>
+        </div>
+      </div>
+      <div class="ch-right" style="display:flex;align-items:center;gap:16px;">
+        <a href="index.html" style="font-size:12px;color:var(--mid);text-decoration:none;display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:3px;border:1px solid var(--border);transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(250,248,244,0.3)';this.style.color='var(--paper)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--mid)'">← Back to Claro</a>
+        <span style="font-size:11px;color:var(--mid);">claro.direct</span>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+      <textarea class="chat-input" id="chat-input" placeholder="Ask anything about Claro..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="input-hint">Claro AI · Answers questions about operational intelligence for your business</div>
+    <div class="copyright">© 2026 Claro.direct · All rights reserved</div>
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are Claro, an AI assistant for Claro.direct — an operational intelligence platform for growing businesses. You are knowledgeable, direct, warm, and never use jargon unnecessarily. You speak like a trusted advisor, not a salesperson.
+
+ABOUT CLARO.DIRECT:
+Claro is an operational intelligence layer for small and mid-size businesses (£500k–£5m revenue). It reads a business's existing data and translates it into plain English decisions — automatically, daily, without adding to anyone's workload.
+
+The name Claro comes from the Latin for "clear" — making unclear data clear.
+
+WHAT CLARO DOES:
+1. Adaptive Storefront — reads Shopify/WooCommerce sales data daily and automatically reshapes the homepage: best-selling category drives the hero banner, low stock triggers urgency messaging, product grid reorders by real-time sales rank. No manual updates needed.
+
+2. Plain English Business Brief — operational data read overnight, translated into a morning brief: one plain English headline, three prioritised actions with reasons, a narrative paragraph. Delivered before the business day starts.
+
+3. Signal detection — continuously monitors sales velocity, stock levels, visitor behaviour, revenue patterns, staff utilisation, customer retention, and more depending on business type.
+
+WHO IT'S FOR:
+- Ecommerce stores (Shopify/WooCommerce) with real transaction volume
+- Cafés and restaurants with repeat demand patterns
+- Agencies and service businesses tracking projects and pipeline
+- Physical retailers with footfall and stock patterns
+- £500k–£5m revenue range — too large for gut feel, too small for a BI team
+- Businesses that open dashboards and close them without acting
+
+WHO IT'S NOT FOR:
+- Very early stage with minimal data
+- Looking for a one-time website build
+- No ecommerce or operational data
+- Want to own the codebase
+
+PRICING:
+- Adaptive Storefront: £800–£1,200 setup + £350–£500/month retainer
+- Plain English Brief (add-on): £400 setup + £150/month
+- Full platform (both): £1,200–£1,600 setup + £500–£650/month
+- Early clients get reduced setup fee in exchange for a case study
+- 5 clients = £1,750–£2,500/month recurring revenue
+
+SETUP TIMELINE:
+- Discovery call: 30 minutes
+- Integration and configuration: 2–3 weeks
+- Go live: fully automated from day one
+- Ongoing: monthly retainer covers updates, rule changes, performance review
+
+THE DIFFERENCE FROM DASHBOARDS:
+Dashboards show numbers. Claro translates numbers into decisions. "SKU-441: 4 units" means nothing. "You'll run out of your best-seller before Monday — reorder today" is an action. Claro provides the second, not the first.
+
+THE ROADMAP (future):
+Automatic promotional triggers, inventory-aware merchandising, customer segmentation, AI campaign suggestions, staffing recommendations, supplier alerts, churn prediction.
+
+CONTACT:
+hello@claro.direct — responds within 24 hours
+The next step is always a 30-minute call — no pitch, no deck, just a conversation about their data.
+
+YOUR BEHAVIOUR:
+- Be conversational and specific — use their business type if they mention it
+- Never be pushy — if someone isn't ready, that's fine
+- If someone asks to speak to a human or book a call, encourage them to email hello@claro.direct or say you'll capture their email
+- If someone seems like a strong fit, gently suggest the next step: a 30-minute call
+- Keep answers concise — 2-4 paragraphs maximum unless they ask for detail
+- Use plain English — no "synergies", no "leverage", no "solutions"
+- If asked something you don't know, be honest and suggest they email hello@claro.direct
+- When appropriate, offer to capture their email to arrange a call
+- Always sign off responses as Claro, not as an AI assistant`;
+
+let history = [];
+let isTyping = false;
+let captureShown = false;
+
+function getTime() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function addMessage(role, content, showTime=true) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role === 'user' ? 'user' : 'assistant'}`;
+
+  const formatted = content
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+
+  div.innerHTML = `
+    <div class="bubble">${formatted}</div>
+    ${showTime ? `<span class="msg-time">${getTime()}</span>` : ''}
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div;
+}
+
+function addSystemMsg(text) {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg system-msg';
+  div.innerHTML = `<div class="bubble">${text}</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.id = 'typing-msg';
+  div.innerHTML = `<div class="typing-wrap"><div class="td"></div><div class="td"></div><div class="td"></div></div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-msg');
+  if (t) t.remove();
+}
+
+function showCaptureCard() {
+  if (captureShown) return;
+  captureShown = true;
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `
+    <div class="capture-card">
+      <div class="cc-title">Ready to see this with your data?</div>
+      <div class="cc-sub">Leave your email and we'll arrange a 30-minute call. No pitch. Just your data, made clear.</div>
+      <input class="cc-input" type="email" placeholder="your@email.com" id="capture-email">
+      <button class="cc-btn" onclick="submitCapture()">Book the conversation →</button>
+      <div class="cc-note">Response within 24 hours · hello@claro.direct</div>
+    </div>
+  `;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function submitCapture() {
+  const email = document.getElementById('capture-email').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('capture-email').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('capture-email').style.borderColor = '', 2000);
+    return;
+  }
+  const card = document.getElementById('capture-email').closest('.capture-card');
+  card.innerHTML = `
+    <div class="cc-title">Perfect. We'll be in touch.</div>
+    <div class="cc-sub">Expect a message at ${email} within 24 hours.<br>In the meantime, keep exploring — or ask me anything else.</div>
+  `;
+  setTimeout(() => addMessage('assistant', "Great — you'll hear from us within 24 hours. Is there anything else you'd like to know about Claro in the meantime?"), 800);
+}
+
+async function sendMessage(content) {
+  const input = document.getElementById('chat-input');
+  const text = content || input.value.trim();
+  if (!text || isTyping) return;
+
+  input.value = '';
+  autoResize(input);
+  isTyping = true;
+  document.getElementById('send-btn').disabled = true;
+
+  addMessage('user', text);
+  history.push({ role: 'user', content: text });
+
+  showTyping();
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: SYSTEM_PROMPT,
+        messages: history
+      })
+    });
+
+    const data = await response.json();
+    const reply = data.content?.[0]?.text || "I'm having trouble responding right now. Please email hello@claro.direct directly.";
+
+    removeTyping();
+    addMessage('assistant', reply);
+    history.push({ role: 'assistant', content: reply });
+
+    // Show capture card after 3rd assistant message if not shown
+    const assistantMsgs = history.filter(m => m.role === 'assistant').length;
+    if (assistantMsgs >= 3 && !captureShown) {
+      setTimeout(() => showCaptureCard(), 1000);
+    }
+
+  } catch(err) {
+    removeTyping();
+    addMessage('assistant', "Something went wrong on my end. Please email **hello@claro.direct** directly and we'll get back to you within 24 hours.");
+  }
+
+  isTyping = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+
+function askQuick(text) {
+  sendMessage(text);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Opening message
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    addMessage('assistant', `Welcome to **Claro.direct**.
+
+I'm here to answer any questions you have about operational intelligence — what it is, whether it fits your business, how it works, and what it costs.
+
+No sales pitch. Just honest answers.
+
+What would you like to know?`);
+    addSystemMsg('Ask anything — or use the quick questions on the left');
+  }, 400);
+});
+</script>
+</body>
+</html>

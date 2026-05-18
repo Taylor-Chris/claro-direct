@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claro.direct — Operational Intelligence for Growing Businesses</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0a0907;
+  --paper:#faf8f4;
+  --blue:#185FA5;
+  --blue-light:#E6F1FB;
+  --green:#1D9E75;
+  --green-light:#E1F5EE;
+  --red:#C5372C;
+  --red-light:#FCEBEB;
+  --amber:#BA7517;
+  --amber-light:#FAEEDA;
+  --mid:#6b6760;
+  --border:#e8e3da;
+  --serif:'Fraunces',Georgia,serif;
+  --sans:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--sans);background:var(--ink);color:var(--paper);}
+
+.scene{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.7s ease;padding:2rem;}
+.scene.active{opacity:1;pointer-events:all;}
+
+/* OPENING */
+#s0{background:var(--ink);}
+.brand-mark{font-family:var(--serif);font-size:13px;font-weight:300;letter-spacing:0.3em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;opacity:0;animation:fadeUp 0.8s 0.3s forwards;}
+.brand-domain{font-size:11px;color:var(--mid);letter-spacing:0.15em;margin-bottom:52px;opacity:0;animation:fadeUp 0.8s 0.5s forwards;}
+.opening-q{font-family:var(--serif);font-size:clamp(36px,5vw,64px);font-weight:300;line-height:1.2;text-align:center;max-width:700px;margin-bottom:16px;opacity:0;animation:fadeUp 0.8s 0.9s forwards;}
+.opening-q em{font-style:italic;color:var(--blue);}
+.opening-sub{font-size:15px;color:var(--mid);opacity:0;animation:fadeUp 0.8s 1.3s forwards;}
+.open-cta{margin-top:52px;opacity:0;animation:fadeUp 0.8s 1.7s forwards;}
+.btn-primary{font-family:var(--sans);font-size:14px;font-weight:500;padding:14px 36px;border-radius:3px;background:var(--paper);color:var(--ink);border:none;cursor:pointer;letter-spacing:0.02em;transition:all 0.2s;}
+.btn-primary:hover{background:#fff;transform:translateY(-1px);box-shadow:0 8px 24px rgba(250,248,244,0.2);}
+
+/* BUSINESS SELECT */
+#s1{background:var(--ink);}
+.scene-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--blue);margin-bottom:20px;}
+.scene-h{font-family:var(--serif);font-size:clamp(28px,4vw,48px);font-weight:300;line-height:1.25;text-align:center;max-width:600px;margin-bottom:48px;}
+.biz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;max-width:600px;width:100%;}
+.biz-card{border:1px solid rgba(250,248,244,0.15);border-radius:6px;padding:24px 20px;cursor:pointer;transition:all 0.25s;text-align:left;background:transparent;}
+.biz-card:hover{border-color:var(--blue);background:rgba(24,95,165,0.08);transform:translateY(-2px);}
+.biz-icon{font-size:28px;margin-bottom:12px;display:block;}
+.biz-name{font-family:var(--serif);font-size:20px;font-weight:400;color:var(--paper);margin-bottom:4px;}
+.biz-desc{font-size:12px;color:var(--mid);line-height:1.5;}
+
+/* WITHOUT */
+#s2{background:#111009;flex-direction:row;align-items:stretch;padding:0;justify-content:stretch;}
+.without-left{width:42%;padding:48px 40px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid rgba(250,248,244,0.08);}
+.without-tag{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--red);margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+.without-tag::before{content:'';width:24px;height:1px;background:var(--red);}
+.without-h{font-family:var(--serif);font-size:clamp(22px,3vw,36px);font-weight:300;line-height:1.25;margin-bottom:16px;}
+.without-body{font-size:14px;color:var(--mid);line-height:1.8;margin-bottom:28px;}
+.pain-list{display:flex;flex-direction:column;gap:8px;}
+.pain-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:4px;background:rgba(197,55,44,0.08);border:1px solid rgba(197,55,44,0.2);}
+.pain-dot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px;}
+.pain-text{font-size:12px;color:#c8bfb0;line-height:1.5;}
+.without-right{flex:1;padding:24px;display:flex;align-items:center;justify-content:center;}
+
+.static-site{width:100%;max-width:400px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.5);color:#111;}
+.ss-nav{background:#1a1a1a;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;}
+.ss-logo{font-size:11px;font-weight:600;color:#fff;}
+.ss-links{display:flex;gap:10px;font-size:9px;color:rgba(255,255,255,0.4);}
+.ss-hero{padding:18px 14px;}
+.ss-stale{font-size:9px;font-weight:600;padding:2px 7px;border-radius:2px;background:#e0e0e0;color:#888;margin-bottom:7px;display:inline-block;}
+.ss-h1{font-size:15px;font-weight:600;color:#222;margin-bottom:3px;line-height:1.3;}
+.ss-sub{font-size:10px;color:#999;margin-bottom:9px;}
+.ss-btn{display:inline-block;font-size:9px;font-weight:600;padding:5px 12px;border-radius:3px;background:#999;color:#fff;}
+.ss-warn{margin:6px 10px;padding:8px 10px;background:#FEF3F2;border-radius:3px;border-left:3px solid #e24b4a;font-size:9px;color:#c0392b;line-height:1.5;}
+.ss-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px;}
+.ss-card{border:1px solid #f0f0f0;border-radius:3px;padding:7px;background:#fafafa;position:relative;}
+.ss-thumb{width:100%;aspect-ratio:1;background:#ebebeb;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:4px;}
+.ss-pname{font-size:8px;font-weight:500;color:#333;}
+.ss-pprice{font-size:8px;color:#999;}
+.stale-lbl{position:absolute;top:4px;right:4px;font-size:7px;font-weight:700;padding:1px 4px;border-radius:2px;background:#e24b4a;color:#fff;}
+
+/* TRANSITION */
+#s-transition{background:var(--ink);text-align:center;}
+.trans-line{font-family:var(--serif);font-size:clamp(26px,4vw,50px);font-weight:300;line-height:1.3;max-width:580px;opacity:0;transform:translateY(20px);transition:all 0.8s;}
+.trans-line.show{opacity:1;transform:translateY(0);}
+.trans-line em{font-style:italic;color:var(--blue);}
+.trans-divider{width:1px;height:48px;background:linear-gradient(to bottom,transparent,var(--blue),transparent);margin:24px auto;opacity:0;transition:opacity 0.6s;}
+.trans-divider.show{opacity:1;}
+
+/* WITH */
+#s3{background:#0a0907;flex-direction:row;align-items:stretch;padding:0;justify-content:stretch;}
+.with-left{width:42%;padding:48px 40px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid rgba(250,248,244,0.08);}
+.with-tag{font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+.with-tag::before{content:'';width:24px;height:1px;background:var(--green);}
+.with-h{font-family:var(--serif);font-size:clamp(22px,3vw,36px);font-weight:300;line-height:1.25;margin-bottom:16px;}
+.with-body{font-size:14px;color:var(--mid);line-height:1.8;margin-bottom:28px;}
+.gain-list{display:flex;flex-direction:column;gap:8px;}
+.gain-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;border-radius:4px;background:rgba(29,158,117,0.08);border:1px solid rgba(29,158,117,0.2);}
+.gain-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;}
+.gain-text{font-size:12px;color:#c8bfb0;line-height:1.5;}
+.with-right{flex:1;padding:24px;display:flex;align-items:center;justify-content:center;}
+
+.live-site{width:100%;max-width:400px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 24px 60px rgba(24,95,165,0.25);color:#111;}
+.ls-chip{font-size:8px;font-weight:700;padding:2px 8px;border-radius:2px;background:var(--green);color:#fff;display:inline-flex;align-items:center;gap:3px;margin-bottom:6px;}
+.live-hero{padding:16px 14px;transition:background 0.5s;}
+.live-badge{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:2px;margin-bottom:6px;letter-spacing:0.03em;}
+.live-h1{font-size:15px;font-weight:700;line-height:1.3;margin-bottom:3px;color:#111;}
+.live-sub{font-size:10px;color:#666;margin-bottom:8px;}
+.live-btn{display:inline-block;font-size:9px;font-weight:700;padding:5px 12px;border-radius:3px;color:#fff;}
+.live-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px;border-top:1px solid #f0f0f0;}
+.live-card{border:1px solid #f0f0f0;border-radius:3px;padding:6px;background:#fafafa;position:relative;}
+.live-card.ft{border-width:2px;}
+.live-thumb{width:100%;aspect-ratio:1;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:4px;}
+.live-pname{font-size:8px;font-weight:600;color:#111;}
+.live-pprice{font-size:8px;color:#666;}
+.live-match{font-size:7px;font-weight:700;margin-top:2px;}
+.brief-strip{margin:6px 8px;padding:9px 10px;background:#f7f7f5;border-radius:3px;border-left:3px solid var(--blue);}
+.brief-title{font-size:8px;font-weight:700;color:#185FA5;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;}
+.brief-action{font-size:8px;color:#333;padding:2px 0;display:flex;align-items:baseline;gap:3px;}
+.brief-action::before{content:'→';color:#185FA5;font-size:7px;}
+
+/* CTA */
+#s4{background:var(--ink);}
+.cta-pre{font-size:11px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:var(--green);margin-bottom:32px;}
+.cta-h{font-family:var(--serif);font-size:clamp(32px,5vw,58px);font-weight:300;line-height:1.2;text-align:center;max-width:640px;margin-bottom:14px;}
+.cta-h em{font-style:italic;color:var(--blue);}
+.cta-sub{font-size:15px;color:var(--mid);text-align:center;max-width:480px;line-height:1.7;margin-bottom:44px;}
+.email-form{display:flex;gap:10px;max-width:440px;width:100%;}
+.email-inp{flex:1;padding:14px 18px;border-radius:3px;border:1px solid rgba(250,248,244,0.2);background:rgba(250,248,244,0.06);color:var(--paper);font-family:var(--sans);font-size:14px;outline:none;transition:border-color 0.2s;}
+.email-inp::placeholder{color:var(--mid);}
+.email-inp:focus{border-color:var(--blue);}
+.email-submit{padding:14px 28px;border-radius:3px;background:var(--blue);color:#fff;border:none;cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:600;white-space:nowrap;transition:all 0.2s;}
+.email-submit:hover{background:#1470b8;}
+.cta-note{font-size:11px;color:var(--mid);margin-top:14px;text-align:center;}
+.success-state{display:none;text-align:center;}
+.success-h{font-family:var(--serif);font-size:36px;font-weight:300;margin-bottom:10px;}
+.success-sub{font-size:14px;color:var(--mid);line-height:1.7;}
+
+/* NAV */
+.scene-nav{position:fixed;bottom:32px;right:32px;display:flex;gap:10px;z-index:100;}
+.nav-btn{font-family:var(--sans);font-size:12px;font-weight:600;padding:10px 22px;border-radius:3px;border:1px solid rgba(250,248,244,0.2);background:transparent;color:var(--paper);cursor:pointer;letter-spacing:0.05em;transition:all 0.2s;}
+.nav-btn:hover{background:rgba(250,248,244,0.08);}
+.nav-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.nav-btn.primary:hover{background:#1470b8;}
+
+.progress{position:fixed;top:0;left:0;height:2px;background:var(--blue);transition:width 0.6s ease;z-index:200;}
+.back-btn{position:fixed;top:24px;left:28px;font-size:11px;color:var(--mid);cursor:pointer;display:none;letter-spacing:0.05em;transition:color 0.2s;z-index:100;}
+.back-btn:hover{color:var(--paper);}
+.back-btn.visible{display:block;}
+
+/* brand fixed */
+.brand-fixed{position:fixed;top:22px;left:50%;transform:translateX(-50%);text-align:center;z-index:100;}
+.brand-fixed-name{font-family:var(--serif);font-size:14px;font-weight:300;letter-spacing:0.25em;text-transform:uppercase;color:rgba(250,248,244,0.35);}
+.brand-fixed-url{font-size:9px;color:rgba(250,248,244,0.2);letter-spacing:0.1em;margin-top:1px;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" style="width:0%"></div>
+<div class="brand-fixed"><div class="brand-fixed-name">Claro</div><div class="brand-fixed-url">claro.direct</div></div>
+<div class="back-btn" id="back-btn" onclick="goBack()">← Back</div>
+
+<!-- S0: OPENING -->
+<div class="scene active" id="s0">
+  <div class="opening-q">The data already exists.<br>It just isn't <em>saying anything.</em></div>
+  <div class="opening-sub">Operational intelligence for growing businesses.</div>
+  <div class="open-cta"><button class="btn-primary" onclick="goTo(1)">See what it does →</button></div>
+</div>
+
+<!-- S1: BUSINESS TYPE -->
+<div class="scene" id="s1">
+  <div class="scene-eyebrow">Step 1 of 3</div>
+  <div class="scene-h">What kind of business<br>are you running?</div>
+  <div class="biz-grid">
+    <div class="biz-card" onclick="selectBiz('ecommerce')"><span class="biz-icon">🛍️</span><div class="biz-name">Ecommerce</div><div class="biz-desc">Shopify or WooCommerce with real transaction volume</div></div>
+    <div class="biz-card" onclick="selectBiz('cafe')"><span class="biz-icon">☕</span><div class="biz-name">Café or restaurant</div><div class="biz-desc">Repeat demand, daily operations, staff and stock patterns</div></div>
+    <div class="biz-card" onclick="selectBiz('agency')"><span class="biz-icon">💻</span><div class="biz-name">Agency or service</div><div class="biz-desc">Projects, pipeline, utilisation, clients and cash flow</div></div>
+    <div class="biz-card" onclick="selectBiz('retail')"><span class="biz-icon">🏪</span><div class="biz-name">Physical retail</div><div class="biz-desc">Shop floor, footfall, stock turns, seasonal patterns</div></div>
+  </div>
+</div>
+
+<!-- S2: WITHOUT -->
+<div class="scene" id="s2">
+  <div class="without-left">
+    <div class="without-tag">Without Claro</div>
+    <div class="without-h" id="without-h"></div>
+    <div class="without-body" id="without-body"></div>
+    <div class="pain-list" id="pain-list"></div>
+  </div>
+  <div class="without-right"><div class="static-site" id="static-mockup"></div></div>
+</div>
+
+<!-- TRANSITION -->
+<div class="scene" id="s-transition">
+  <div class="trans-line" id="t1">Your data has been trying to tell you something.</div>
+  <div class="trans-divider" id="td"></div>
+  <div class="trans-line" id="t2">Claro <em>translates</em> it — directly.</div>
+</div>
+
+<!-- S3: WITH -->
+<div class="scene" id="s3">
+  <div class="with-left">
+    <div class="with-tag">With Claro</div>
+    <div class="with-h" id="with-h"></div>
+    <div class="with-body" id="with-body"></div>
+    <div class="gain-list" id="gain-list"></div>
+  </div>
+  <div class="with-right"><div class="live-site" id="live-mockup"></div></div>
+</div>
+
+<!-- S4: CTA -->
+<div class="scene" id="s4">
+  <div class="cta-pre">You've seen the difference</div>
+  <div class="cta-h">Want to see this with<br><em>your actual data?</em></div>
+  <div class="cta-sub">A 30-minute conversation. We map your data sources, show you what Claro would detect in your business, and scope exactly what changes. No pitch. No deck. Just your data, made clear.</div>
+  <div class="email-form" id="email-form">
+    <input class="email-inp" type="email" placeholder="your@email.com" id="email-inp">
+    <button class="email-submit" onclick="submitEmail()">Let's talk →</button>
+  </div>
+  <div class="success-state" id="success-state">
+    <div class="success-h">We'll be in touch.</div>
+    <div class="success-sub">Expect a message within 24 hours.<br>No pitch. A conversation about your data.<br><br><span style="color:var(--blue);font-size:13px;">claro.direct</span></div>
+  </div>
+  <div class="cta-note">No commitment. No sales deck. Just clarity.</div>
+  <div style="display:flex;align-items:center;gap:14px;margin-top:20px;max-width:440px;width:100%;">
+    <div style="flex:1;height:1px;background:rgba(250,248,244,0.12);"></div>
+    <span style="font-size:11px;color:var(--mid);">or</span>
+    <div style="flex:1;height:1px;background:rgba(250,248,244,0.12);"></div>
+  </div>
+  <a href="chat.html" style="margin-top:16px;font-size:13px;color:var(--paper);text-decoration:none;border:1px solid rgba(250,248,244,0.2);padding:11px 28px;border-radius:3px;display:inline-block;letter-spacing:0.03em;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(24,95,165,0.8)';this.style.color='#60a5fa';" onmouseout="this.style.borderColor='rgba(250,248,244,0.2)';this.style.color='var(--paper)';">Talk to Claro AI — ask anything →</a>
+</div>
+
+<!-- NAV -->
+<div class="scene-nav" id="scene-nav" style="display:none;">
+  <button class="nav-btn primary" id="next-btn" onclick="nextScene()">Continue →</button>
+</div>
+
+<script>
+const biz={
+  ecommerce:{
+    withoutH:'Your homepage is promoting last month\'s products.',
+    withoutBody:'Your best-seller changed three days ago. Stock is running low. A visitor clicked headphones twice and you showed them kitchenware. The data to fix all of this exists — it just isn\'t connected to anything.',
+    pains:['Homepage last updated manually — 18 days ago','Best-selling product not featured anywhere on the page','Stock: 4 units left on top SKU — no urgency messaging live','Visitor who clicked electronics 3× shown home decor'],
+    staticMockup:`<div class="ss-nav"><span class="ss-logo">Northfield Co.</span><div class="ss-links"><span>Shop</span><span>Sale</span></div></div><div class="ss-hero" style="background:#f5f5f5;"><span class="ss-stale">⚠ Last updated 18 days ago</span><div class="ss-h1">Summer Collection Now Live</div><div class="ss-sub">It's October. Your homepage says summer.</div><span class="ss-btn">Shop summer</span></div><div class="ss-warn">⚠ Merino Hoodie: 38 units sold today. Not on your homepage.</div><div class="ss-grid"><div class="ss-card"><span class="stale-lbl">0 sold</span><div class="ss-thumb">👗</div><div class="ss-pname">Summer Dress</div><div class="ss-pprice">£45</div></div><div class="ss-card"><span class="stale-lbl">0 sold</span><div class="ss-thumb">🩴</div><div class="ss-pname">Sandals</div><div class="ss-pprice">£32</div></div><div class="ss-card"><span class="stale-lbl">0 sold</span><div class="ss-thumb">👒</div><div class="ss-pname">Sun Hat</div><div class="ss-pprice">£18</div></div></div>`,
+    withH:'The intelligence layer runs before you wake up.',
+    withBody:'At 06:00, Claro detected the knitwear surge, applied urgency messaging, adapted the hero banner, and had your morning brief waiting. You opened your laptop to a business already acting on its data.',
+    gains:['Hero banner: switched to knitwear at 06:00 — automatically','Merino Hoodie: urgency mode live — 4 left badge applied','Repeat buyers identified — thank-you prompt in brief','Morning brief: 3 ranked actions, reasoned and ready'],
+    liveMockup:`<div class="ss-nav"><span class="ss-logo">Northfield Co.</span><div class="ss-links"><span>Shop</span><span>Sale</span></div></div><div class="live-hero" style="background:#E6F1FB;"><span class="ls-chip">Claro · live</span><br><span class="live-badge" style="background:#185FA5;color:#fff;">Trending today</span><div class="live-h1">Your kind of knitwear.<br>Moving fast.</div><div class="live-sub">Merino & cable knit surging — updated 06:00</div><span class="live-btn" style="background:#185FA5;">Shop knitwear</span></div><div class="brief-strip"><div class="brief-title">This morning's brief — claro.direct</div><div class="brief-action">Reorder Merino Hoodie (Black M) — 4 units, out by tomorrow</div><div class="brief-action">Thank your 6 repeat buyers — 3+ orders each this month</div><div class="brief-action">Flash sale on Desk Lamp — 47 units, zero sales this week</div></div><div class="live-grid"><div class="live-card ft" style="border-color:#185FA5;"><div class="live-thumb" style="background:#E6F1FB;">👕</div><div class="live-pname">Merino Hoodie</div><div class="live-pprice">£55</div><div class="live-match" style="color:#e24b4a;">4 left — act now</div></div><div class="live-card"><div class="live-thumb" style="background:#E6F1FB;">🧶</div><div class="live-pname">Cable Knit</div><div class="live-pprice">£79</div></div><div class="live-card"><div class="live-thumb" style="background:#E6F1FB;">🧥</div><div class="live-pname">Wax Jacket</div><div class="live-pprice">£189</div></div></div>`,
+  },
+  cafe:{
+    withoutH:'You\'re two staff short at your busiest hour.',
+    withoutBody:'Covers are up 22%. Your pastry range is working. But nobody told the rota. You\'re heading into a 40-cover peak window understaffed — and rain is coming at 3pm.',
+    pains:['Rota gap: 12–2pm, 2 staff short — peak window unplanned','Pastry range sold out by 1pm yesterday — no extra prep triggered','Rain forecast 3pm — 30% walk-in uplift, no marketing ready','Avg spend up £1.20 — nobody knows why or how to repeat it'],
+    staticMockup:`<div class="ss-nav" style="background:#2c1a0e;"><span class="ss-logo" style="color:#fff;">The Corner</span><div class="ss-links"><span>Menu</span><span>Book</span></div></div><div class="ss-hero" style="background:#f5f0e8;"><span class="ss-stale">⚠ Rota: 2 staff gaps today</span><div class="ss-h1">Good morning.</div><div class="ss-sub">127 covers expected. Rostered: 4. Needed: 6.</div><span class="ss-btn" style="background:#2c1a0e;">View rota</span></div><div class="ss-warn">⚠ Pastry range will sell out by 1pm. No extra prep scheduled. Rain at 3pm — no promotion ready.</div><div class="ss-grid"><div class="ss-card"><div class="ss-thumb">☕</div><div class="ss-pname">Revenue: £1,068</div><div class="ss-pprice">Avg spend +£1.20</div></div><div class="ss-card"><div class="ss-thumb">👥</div><div class="ss-pname">Staff: 4/6</div><div class="ss-pprice">2 gaps unfilled</div></div><div class="ss-card"><div class="ss-thumb">🌧️</div><div class="ss-pname">Rain: 3pm</div><div class="ss-pprice">No post scheduled</div></div></div>`,
+    withH:'The intelligence layer called Jamie before you arrived.',
+    withBody:'At 06:30, Claro detected the rota gap, flagged the pastry prep shortfall, and had a rain-day post ready for 2:30pm. Your morning brief told you exactly what mattered and what to do.',
+    gains:['Rota gap flagged at 06:30 — Jamie confirmed, gap filled','Extra pastry prep triggered at 07:00 — before the sell-out window','Rain post scheduled 2:30pm — predicted £300+ walk-in uplift','Avg spend rise traced to pastry upsell — brief says: double down'],
+    liveMockup:`<div class="ss-nav" style="background:#2c1a0e;"><span class="ss-logo" style="color:#fff;">The Corner</span><div class="ss-links"><span>Menu</span><span>Book</span></div></div><div class="live-hero" style="background:#FAEEDA;"><span class="ls-chip" style="background:#BA7517;">Claro · live</span><br><span class="live-badge" style="background:#BA7517;color:#fff;">Busiest Saturday in a month</span><div class="live-h1">Revenue on track.<br>Three actions done.</div><div class="live-sub">Rota filled · Pastry prepped · Rain post ready</div><span class="live-btn" style="background:#BA7517;">View brief</span></div><div class="brief-strip" style="border-color:#BA7517;"><div class="brief-title" style="color:#BA7517;">This morning's brief — claro.direct</div><div class="brief-action">Jamie confirmed 12–2pm — rota gap filled ✓</div><div class="brief-action">Prep 40 extra pastries before noon</div><div class="brief-action">Post rain offer at 2:30pm — 30% walk-in uplift incoming</div></div><div class="live-grid"><div class="live-card ft" style="border-color:#BA7517;"><div class="live-thumb" style="background:#FAEEDA;">✓</div><div class="live-pname">All gaps covered</div><div class="live-pprice">Before 07:00</div></div><div class="live-card"><div class="live-thumb" style="background:#FAEEDA;">🥐</div><div class="live-pname">Extra prep</div><div class="live-pprice">Triggered</div></div><div class="live-card"><div class="live-thumb" style="background:#FAEEDA;">📱</div><div class="live-pname">Rain post</div><div class="live-pprice">2:30pm ready</div></div></div>`,
+  },
+  agency:{
+    withoutH:'£4,200 has been sitting unpaid for 14 days.',
+    withoutBody:'Two projects are drifting. Three proposals nobody has chased. An invoice that started as an admin task is now a cash flow problem. The data to see all of this exists — it\'s in five different places.',
+    pains:['Invoice #047: £4,200 — 14 days overdue, no chase sent','Project Heron: 3 days behind — gap widening, no check-in booked','Meridian proposal: sent 8 days ago, no follow-up','Utilisation: 84% this week (was 90%) — nobody spotted the drift'],
+    staticMockup:`<div class="ss-nav" style="background:#1a1a2e;"><span class="ss-logo" style="color:#fff;">Bright Agency</span><div class="ss-links"><span>Projects</span><span>Invoices</span></div></div><div class="ss-hero" style="background:#f5f5f5;"><span class="ss-stale">⚠ 2 items need attention</span><div class="ss-h1">This week at a glance</div><div class="ss-sub">7 projects · £28k pipeline · 84% utilisation</div><span class="ss-btn">View dashboard</span></div><div class="ss-warn">⚠ Invoice #047 (£4,200) 14 days overdue. Project Heron 3 days behind. Meridian proposal: 8 days, no follow-up.</div><div class="ss-grid"><div class="ss-card"><div class="ss-thumb">💸</div><div class="ss-pname">£4,200 overdue</div><div class="ss-pprice">14 days · no action</div></div><div class="ss-card"><div class="ss-thumb">📋</div><div class="ss-pname">Heron: 3d behind</div><div class="ss-pprice">Widening</div></div><div class="ss-card"><div class="ss-thumb">📧</div><div class="ss-pname">Meridian: 8 days</div><div class="ss-pprice">No follow-up</div></div></div>`,
+    withH:'The intelligence layer tells you what to do — not just what happened.',
+    withBody:'This morning\'s brief flagged the invoice as a call not an email, identified Heron as a 20-minute fix, and noted Meridian is in the decision window. Three actions. Ninety minutes of your time.',
+    gains:['Invoice #047: call flagged — 78% phone vs 23% email response rate','Project Heron: reset call prompt — 3 days early prevents 2 weeks late','Meridian: follow-up prompted — 8 days is the decision window','Utilisation drop traced — two projects drifting, flagged for focus'],
+    liveMockup:`<div class="ss-nav" style="background:#1a1a2e;"><span class="ss-logo" style="color:#fff;">Bright Agency</span><div class="ss-links"><span>Projects</span><span>Invoices</span></div></div><div class="live-hero" style="background:#E6F1FB;"><span class="ls-chip">Claro · live</span><br><span class="live-badge" style="background:#185FA5;color:#fff;">Two things need attention today</span><div class="live-h1">Business healthy.<br>Two gaps closing now.</div><div class="live-sub">Invoice chase · Project reset · Proposal follow-up</div><span class="live-btn" style="background:#185FA5;">View brief</span></div><div class="brief-strip"><div class="brief-title">This morning's brief — claro.direct</div><div class="brief-action">Call Invoice #047 — £4,200, 14 days, phone not email</div><div class="brief-action">Book Project Heron reset — 20 min now saves 2 weeks</div><div class="brief-action">Follow up Meridian — 8 days is the decision window</div></div><div class="live-grid"><div class="live-card ft" style="border-color:#185FA5;"><div class="live-thumb" style="background:#E6F1FB;">📞</div><div class="live-pname">Invoice chase</div><div class="live-pprice">Call today</div></div><div class="live-card"><div class="live-thumb" style="background:#E6F1FB;">📋</div><div class="live-pname">Heron reset</div><div class="live-pprice">20 minutes</div></div><div class="live-card"><div class="live-thumb" style="background:#E6F1FB;">📧</div><div class="live-pname">Meridian</div><div class="live-pprice">Follow up now</div></div></div>`,
+  },
+  retail:{
+    withoutH:'Six paying customers are about to quietly cancel.',
+    withoutBody:'Check-ins are up. PT revenue climbing. On the surface today looks fine. But six members haven\'t visited in 21 days — and silent churn costs 5–7× more than acquiring a new member.',
+    pains:['6 members: 21+ days absent — 68% churn probability, no contact made','Pilates Saturday fill: 61% (was 90% three weeks ago) — cause unknown','3 members hit 1-year anniversary today — no acknowledgement sent','PT revenue up £120 — nobody knows what drove it'],
+    staticMockup:`<div class="ss-nav" style="background:#1a0d14;"><span class="ss-logo" style="color:#fff;">Peak Fitness</span><div class="ss-links"><span>Members</span><span>Classes</span></div></div><div class="ss-hero" style="background:#f5f5f5;"><span class="ss-stale">⚠ 6 members at risk</span><div class="ss-h1">Today looks fine.</div><div class="ss-sub">89 check-ins · 73% fill · £640 PT revenue</div><span class="ss-btn">View dashboard</span></div><div class="ss-warn">⚠ 6 members 21+ days absent. Pilates dropped 90%→61% in 3 weeks. 3 one-year anniversaries today — unacknowledged.</div><div class="ss-grid"><div class="ss-card"><div class="ss-thumb">⚠️</div><div class="ss-pname">6 at risk</div><div class="ss-pprice">No contact sent</div></div><div class="ss-card"><div class="ss-thumb">📉</div><div class="ss-pname">Pilates: 61%</div><div class="ss-pprice">Was 90%</div></div><div class="ss-card"><div class="ss-thumb">🎂</div><div class="ss-pname">3 anniversaries</div><div class="ss-pprice">Unacknowledged</div></div></div>`,
+    withH:'The intelligence layer sees what the headline numbers hide.',
+    withBody:'This morning\'s brief identified the six at-risk members by name, prompted anniversary messages, and traced the Pilates drop to a specific solvable cause. The numbers looked fine. Claro saw what was underneath.',
+    gains:['6 at-risk members: personal prompts sent — recovers 3–4 typically','3 anniversary members: acknowledgement + Google review request ready','Pilates drop: traced to instructor change 3 weeks ago — fixable','PT revenue rise: linked to specific trainer — brief says scale this'],
+    liveMockup:`<div class="ss-nav" style="background:#1a0d14;"><span class="ss-logo" style="color:#fff;">Peak Fitness</span><div class="ss-links"><span>Members</span><span>Classes</span></div></div><div class="live-hero" style="background:#FBEAF0;"><span class="ls-chip" style="background:#993556;">Claro · live</span><br><span class="live-badge" style="background:#993556;color:#fff;">Good Saturday — 3 things underneath</span><div class="live-h1">Numbers look fine.<br>We found what doesn't.</div><div class="live-sub">6 at risk · 3 anniversaries · 1 class to fix</div><span class="live-btn" style="background:#993556;">View brief</span></div><div class="brief-strip" style="border-color:#993556;"><div class="brief-title" style="color:#993556;">This morning's brief — claro.direct</div><div class="brief-action">Message 6 at-risk members personally — not automated</div><div class="brief-action">Acknowledge 3 one-year members — ask for a Google review</div><div class="brief-action">Investigate Pilates — instructor changed 3 weeks ago</div></div><div class="live-grid"><div class="live-card ft" style="border-color:#993556;"><div class="live-thumb" style="background:#FBEAF0;">💬</div><div class="live-pname">6 prompted</div><div class="live-pprice">Personal message</div></div><div class="live-card"><div class="live-thumb" style="background:#FBEAF0;">🎂</div><div class="live-pname">3 anniversaries</div><div class="live-pprice">Acknowledged</div></div><div class="live-card"><div class="live-thumb" style="background:#FBEAF0;">🔍</div><div class="live-pname">Pilates</div><div class="live-pprice">Cause found</div></div></div>`,
+  }
+};
+
+const scenes=['s0','s1','s2','s-transition','s3','s4'];
+let currentScene='s0';
+
+function goTo(idx){
+  // Hide persistent chat btn on final CTA scene — already has chat links there
+  const chatLink = document.getElementById('chat-link');
+  if(chatLink) chatLink.style.display = idx === scenes.length-1 ? 'none' : 'flex';
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  document.getElementById(scenes[idx]).classList.add('active');
+  currentScene=scenes[idx];
+  document.getElementById('progress').style.width=Math.round((idx/(scenes.length-1))*100)+'%';
+  document.getElementById('back-btn').classList.toggle('visible',idx>0);
+  const nav=document.getElementById('scene-nav');
+  const hide=['s0','s1','s-transition'];
+  nav.style.display=hide.includes(scenes[idx])?'none':'flex';
+  if(scenes[idx]==='s-transition') runTransition(idx);
+  const btn=document.getElementById('next-btn');
+  if(scenes[idx]==='s2') btn.textContent='See what changes →';
+  else if(scenes[idx]==='s3') btn.textContent='See the outcome →';
+  else if(scenes[idx]==='s4') btn.style.display='none';
+  else btn.style.display='';
+}
+
+function goBack(){const i=scenes.indexOf(currentScene);if(i>0)goTo(i-1);}
+function nextScene(){const i=scenes.indexOf(currentScene);if(i<scenes.length-1)goTo(i+1);}
+
+function selectBiz(key){
+  const d=biz[key];
+  document.getElementById('without-h').textContent=d.withoutH;
+  document.getElementById('without-body').textContent=d.withoutBody;
+  document.getElementById('pain-list').innerHTML=d.pains.map(p=>`<div class="pain-item"><div class="pain-dot"></div><div class="pain-text">${p}</div></div>`).join('');
+  document.getElementById('static-mockup').innerHTML=d.staticMockup;
+  document.getElementById('with-h').textContent=d.withH;
+  document.getElementById('with-body').textContent=d.withBody;
+  document.getElementById('gain-list').innerHTML=d.gains.map(g=>`<div class="gain-item"><div class="gain-dot"></div><div class="gain-text">${g}</div></div>`).join('');
+  document.getElementById('live-mockup').innerHTML=d.liveMockup;
+  goTo(2);
+}
+
+function runTransition(idx){
+  const t1=document.getElementById('t1'),td=document.getElementById('td'),t2=document.getElementById('t2');
+  t1.classList.remove('show');td.classList.remove('show');t2.classList.remove('show');
+  setTimeout(()=>t1.classList.add('show'),300);
+  setTimeout(()=>td.classList.add('show'),900);
+  setTimeout(()=>t2.classList.add('show'),1400);
+  setTimeout(()=>goTo(4),3400);
+}
+
+function submitEmail(){
+  const v=document.getElementById('email-inp').value.trim();
+  if(!v||!v.includes('@')){document.getElementById('email-inp').style.borderColor='var(--red)';setTimeout(()=>document.getElementById('email-inp').style.borderColor='',2000);return;}
+  document.getElementById('email-form').style.display='none';
+  document.getElementById('success-state').style.display='block';
+}
+</script>
+
+<!-- Persistent chat button — hidden on final scene -->
+<a href="chat.html" id="chat-link" style="position:fixed;bottom:28px;left:28px;font-size:11px;font-weight:600;color:#fff;background:var(--blue);text-decoration:none;padding:9px 16px;border-radius:20px;letter-spacing:0.04em;z-index:200;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px rgba(24,95,165,0.35);">
+  <span>◎</span> Talk to Claro
+</a>
+
+<!-- Copyright -->
+<div style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(250,248,244,0.25);letter-spacing:0.08em;white-space:nowrap;z-index:100;">© 2026 Claro.direct · All rights reserved</div>
+</body>
+</html>
