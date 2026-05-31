@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FindIt — See it. Love it. Find it. Buy it.</title>
+<style>
+:root{
+  --void:#050508;
+  --blue:#4F8EF7;
+  --cyan:#00D4FF;
+  --green:#10B981;
+  --gold:#F59E0B;
+  --red:#EF4444;
+  --paper:#F8F7F4;
+  --mid:#6B7280;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'Georgia',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;width:100%;overflow:hidden;background:#000;font-family:var(--sans);}
+
+/* CAMERA */
+#camera-feed{
+  position:fixed;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:1;
+}
+
+/* CANVAS for processing */
+#capture-canvas{display:none;}
+
+/* OVERLAY UI */
+.ui{position:fixed;inset:0;z-index:10;pointer-events:none;}
+
+/* TOP BAR */
+.topbar{
+  position:absolute;top:0;left:0;right:0;
+  padding:48px 20px 16px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{font-family:var(--serif);font-size:18px;font-weight:400;color:#fff;letter-spacing:0.05em;}
+.logo span{color:var(--cyan);font-style:italic;}
+.status-pill{
+  font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.2);color:#fff;
+  letter-spacing:0.05em;
+}
+.status-pill.scanning{border-color:var(--cyan);color:var(--cyan);}
+.status-pill.found{border-color:var(--green);color:var(--green);}
+.status-pill.error{border-color:var(--red);color:var(--red);}
+
+/* VIEWFINDER */
+.viewfinder{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-55%);
+  width:260px;height:260px;
+  pointer-events:none;
+}
+.vf-corner{position:absolute;width:24px;height:24px;border-color:rgba(255,255,255,0.8);border-style:solid;}
+.vf-corner.tl{top:0;left:0;border-width:2px 0 0 2px;}
+.vf-corner.tr{top:0;right:0;border-width:2px 2px 0 0;}
+.vf-corner.bl{bottom:0;left:0;border-width:0 0 2px 2px;}
+.vf-corner.br{bottom:0;right:0;border-width:0 2px 2px 0;}
+.vf-scan-line{
+  position:absolute;left:0;right:0;height:2px;top:0;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  display:none;
+  animation:scanMove 2s ease-in-out infinite;
+}
+.vf-scan-line.active{display:block;}
+@keyframes scanMove{
+  0%{top:0;opacity:1;}
+  90%{top:100%;opacity:1;}
+  100%{top:100%;opacity:0;}
+}
+.vf-hint{
+  position:absolute;bottom:-32px;left:50%;transform:translateX(-50%);
+  font-size:11px;color:rgba(255,255,255,0.6);white-space:nowrap;
+  letter-spacing:0.05em;
+}
+
+/* AR BOUNDING BOX */
+.ar-box{
+  position:absolute;
+  border:2px solid var(--cyan);
+  border-radius:4px;
+  display:none;
+  transition:all 0.3s ease;
+  box-shadow:0 0 20px rgba(0,212,255,0.3);
+}
+.ar-box.active{display:block;}
+.ar-corner{position:absolute;width:12px;height:12px;border-color:var(--cyan);border-style:solid;}
+.ar-corner.tl{top:-1px;left:-1px;border-width:3px 0 0 3px;}
+.ar-corner.tr{top:-1px;right:-1px;border-width:3px 3px 0 0;}
+.ar-corner.bl{bottom:-1px;left:-1px;border-width:0 0 3px 3px;}
+.ar-corner.br{bottom:-1px;right:-1px;border-width:0 3px 3px 0;}
+
+/* AR LABEL */
+.ar-label{
+  position:absolute;
+  background:rgba(5,5,8,0.88);
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(0,212,255,0.4);
+  border-radius:10px;
+  padding:10px 12px;
+  min-width:140px;
+  display:none;
+  animation:labelFloat 3s ease-in-out infinite;
+  pointer-events:all;
+  cursor:pointer;
+}
+.ar-label.active{display:block;}
+@keyframes labelFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-4px);}
+}
+.al-category{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--cyan);margin-bottom:3px;}
+.al-name{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;line-height:1.2;}
+.al-price{font-size:15px;font-weight:700;color:#fff;}
+.al-match{font-size:9px;color:var(--green);margin-top:3px;}
+.al-match::before{content:'◉ ';}
+.al-tap{font-size:9px;color:rgba(255,255,255,0.35);margin-top:4px;}
+
+/* BOTTOM CONTROLS */
+.bottom-bar{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:20px 32px 48px;
+  background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);
+  display:flex;align-items:center;justify-content:space-between;
+  pointer-events:all;
+}
+
+/* SHUTTER */
+.shutter{
+  width:72px;height:72px;border-radius:50%;
+  border:3px solid rgba(255,255,255,0.8);
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.15s;
+  position:relative;
+}
+.shutter:active{transform:scale(0.92);background:rgba(255,255,255,0.3);}
+.shutter-inner{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.7);}
+.shutter.scanning .shutter-inner{background:var(--cyan);animation:shutterPulse 1s infinite;}
+@keyframes shutterPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.shutter-label{
+  position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap;
+}
+
+/* SIDE BUTTONS */
+.side-btn{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;transition:all 0.2s;
+  pointer-events:all;
+}
+.side-btn:hover{border-color:rgba(255,255,255,0.3);}
+
+/* CONFIDENCE OVERLAY */
+.conf-overlay{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  display:none;flex-direction:column;align-items:center;gap:10px;
+  background:rgba(5,5,8,0.7);backdrop-filter:blur(12px);
+  padding:20px 28px;border-radius:16px;
+  border:1px solid rgba(0,212,255,0.2);
+}
+.conf-overlay.active{display:flex;}
+.conf-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--cyan);}
+.conf-track{width:160px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}
+.conf-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;width:0%;transition:width 0.1s;}
+.conf-pct{font-size:28px;font-weight:700;color:var(--cyan);}
+.conf-label{font-size:11px;color:var(--mid);}
+
+/* FLASH */
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20;transition:opacity 0.05s;}
+.flash.on{opacity:0.9;}
+
+/* RESULT SHEET */
+.result-sheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(8,8,12,0.97);
+  backdrop-filter:blur(24px);
+  border-top:1px solid rgba(255,255,255,0.1);
+  border-radius:24px 24px 0 0;
+  padding:12px 20px 40px;
+  z-index:30;
+  transform:translateY(100%);
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  max-height:75vh;
+  overflow-y:auto;
+  pointer-events:all;
+}
+.result-sheet.open{transform:translateY(0);}
+.rs-drag{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px;}
+.rs-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.rs-emoji{font-size:40px;flex-shrink:0;}
+.rs-info{flex:1;}
+.rs-category{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--cyan);margin-bottom:3px;}
+.rs-name{font-size:18px;font-weight:600;color:#fff;line-height:1.2;margin-bottom:4px;}
+.rs-brand{font-size:12px;color:var(--mid);}
+.rs-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rs-desc{font-size:13px;color:var(--mid);line-height:1.7;margin-bottom:16px;}
+.rs-confidence{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:8px;}
+.rs-conf-label{font-size:11px;color:var(--mid);}
+.rs-conf-track{flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
+.rs-conf-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;}
+.rs-conf-pct{font-size:12px;font-weight:700;color:var(--cyan);}
+.rs-retailers-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--mid);margin-bottom:8px;}
+.rs-retailers{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.ret-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;border-radius:10px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);
+  cursor:pointer;transition:all 0.15s;
+}
+.ret-row.best{background:rgba(79,142,247,0.1);border-color:rgba(79,142,247,0.25);}
+.ret-row:active{transform:scale(0.98);}
+.ret-left{display:flex;align-items:center;gap:8px;}
+.ret-name{font-size:13px;color:var(--mid);}
+.ret-row.best .ret-name{color:#fff;}
+.ret-tag{font-size:9px;padding:2px 6px;border-radius:6px;background:var(--blue);color:#fff;font-weight:600;}
+.ret-price{font-size:15px;font-weight:700;color:#fff;}
+.ret-row.best .ret-price{color:var(--cyan);}
+.rs-actions{display:flex;gap:10px;}
+.rs-watch{
+  flex:1;padding:13px;border-radius:12px;
+  background:var(--blue);border:none;
+  color:#fff;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all 0.2s;font-family:var(--sans);
+}
+.rs-watch:active{transform:scale(0.97);}
+.rs-watch.added{background:var(--green);}
+.rs-share{
+  padding:13px 16px;border-radius:12px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--mid);font-size:14px;cursor:pointer;
+  transition:all 0.2s;font-family:var(--sans);
+}
+
+/* API KEY SETUP */
+.setup-screen{
+  position:fixed;inset:0;background:var(--void);z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px;
+}
+.setup-logo{font-family:var(--serif);font-size:28px;color:#fff;margin-bottom:8px;}
+.setup-logo span{color:var(--cyan);font-style:italic;}
+.setup-tagline{font-size:13px;color:var(--mid);margin-bottom:40px;}
+.setup-h{font-size:18px;font-weight:600;color:#fff;margin-bottom:8px;text-align:center;}
+.setup-sub{font-size:13px;color:var(--mid);text-align:center;line-height:1.6;margin-bottom:24px;max-width:320px;}
+.setup-inp{
+  width:100%;max-width:320px;padding:13px 16px;border-radius:10px;
+  background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);
+  color:#fff;font-size:14px;font-family:var(--sans);outline:none;
+  margin-bottom:12px;transition:border-color 0.2s;
+}
+.setup-inp:focus{border-color:var(--blue);}
+.setup-inp::placeholder{color:var(--mid);}
+.setup-btn{
+  width:100%;max-width:320px;padding:13px;border-radius:10px;
+  background:var(--blue);border:none;color:#fff;
+  font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);
+  margin-bottom:16px;
+}
+.setup-note{font-size:11px;color:var(--mid);text-align:center;max-width:280px;line-height:1.6;}
+.setup-note a{color:var(--blue);}
+.setup-demo-btn{
+  width:100%;max-width:320px;padding:11px;border-radius:10px;
+  background:transparent;border:1px solid rgba(255,255,255,0.15);
+  color:var(--mid);font-size:13px;cursor:pointer;font-family:var(--sans);
+  margin-top:8px;
+}
+
+/* NO CAMERA MESSAGE */
+.no-camera{
+  position:fixed;inset:0;background:var(--void);z-index:50;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px;text-align:center;
+}
+.no-camera.show{display:flex;}
+.no-camera h2{font-size:20px;color:#fff;margin-bottom:8px;}
+.no-camera p{font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:24px;}
+.no-camera button{padding:12px 24px;border-radius:10px;background:var(--blue);border:none;color:#fff;font-size:14px;cursor:pointer;}
+
+/* DEMO MODE BANNER */
+.demo-banner{
+  position:absolute;top:100px;left:16px;right:16px;
+  background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
+  border-radius:8px;padding:8px 12px;
+  font-size:11px;color:var(--gold);text-align:center;
+  display:none;
+}
+.demo-banner.show{display:block;}
+
+/* WATCHLIST PANEL */
+.watchlist-panel{
+  position:fixed;inset:0;background:rgba(5,5,8,0.97);z-index:40;
+  transform:translateX(100%);transition:transform 0.35s ease;
+  padding:60px 20px 40px;overflow-y:auto;
+  pointer-events:all;
+}
+.watchlist-panel.open{transform:translateX(0);}
+.wp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.wp-title{font-size:20px;font-weight:600;color:#fff;}
+.wp-close{background:none;border:none;color:var(--mid);font-size:22px;cursor:pointer;}
+.wp-empty{font-size:14px;color:var(--mid);text-align:center;padding:40px 0;}
+.wp-item{padding:14px;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);margin-bottom:10px;}
+.wpi-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.wpi-emoji{font-size:28px;}
+.wpi-name{font-size:14px;font-weight:500;color:#fff;}
+.wpi-brand{font-size:11px;color:var(--mid);}
+.wpi-bottom{display:flex;align-items:center;justify-content:space-between;}
+.wpi-price{font-size:16px;font-weight:700;color:var(--cyan);}
+.wpi-target{font-size:11px;color:var(--mid);}
+.wpi-remove{font-size:11px;color:var(--red);cursor:pointer;background:none;border:none;font-family:var(--sans);}
+</style>
+</head>
+<body>
+
+<!-- CAMERA -->
+<video id="camera-feed" autoplay playsinline muted></video>
+<canvas id="capture-canvas"></canvas>
+
+<!-- FLASH -->
+<div class="flash" id="flash"></div>
+
+<!-- SETUP SCREEN -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-logo">Find<span>It</span></div>
+  <div class="setup-tagline">See it. Love it. Find it. Buy it.</div>
+  <div class="setup-h">FindIt is ready</div>
+  <div class="setup-sub">Point your camera at anything on the street. FindIt identifies it instantly and finds the best price across every major retailer.</div>
+  <button class="setup-btn" onclick="startReal()">Start FindIt →</button>
+  <div class="setup-note">
+    Powered by Google Cloud Vision AI.<br>
+    Your camera feed is never stored or shared.<br>
+    Processing happens in real time.
+  </div>
+  <button class="setup-demo-btn" onclick="startDemo()">Try demo mode first</button>
+</div>
+
+<!-- NO CAMERA -->
+<div class="no-camera" id="no-camera">
+  <h2 style="font-size:22px;margin-bottom:12px;">📷</h2>
+  <h2>Camera access needed</h2>
+  <p>FindIt needs your camera to identify objects in real time.<br><br>
+  On iPhone: tap Allow when Safari asks for camera permission.<br>
+  On desktop: click the camera icon in your browser address bar.</p>
+  <button onclick="initCamera()" style="margin-bottom:12px;">Allow camera access →</button>
+  <button onclick="startDemo()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--mid);padding:10px 20px;border-radius:8px;font-size:13px;cursor:pointer;">Use demo mode instead</button>
+</div>
+
+<!-- UI OVERLAY -->
+<div class="ui" id="ui" style="display:none;">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">Find<span>It</span></div>
+    <div class="status-pill" id="status-pill">READY</div>
+  </div>
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner" id="demo-banner">⚡ Demo mode — tap shutter to simulate identification</div>
+
+  <!-- VIEWFINDER -->
+  <div class="viewfinder" id="viewfinder">
+    <div class="vf-corner tl"></div>
+    <div class="vf-corner tr"></div>
+    <div class="vf-corner bl"></div>
+    <div class="vf-corner br"></div>
+    <div class="vf-scan-line" id="scan-line"></div>
+    <div class="vf-hint" id="vf-hint">point at anything</div>
+  </div>
+
+  <!-- AR BOX -->
+  <div class="ar-box" id="ar-box">
+    <div class="ar-corner tl"></div>
+    <div class="ar-corner tr"></div>
+    <div class="ar-corner bl"></div>
+    <div class="ar-corner br"></div>
+  </div>
+
+  <!-- AR LABEL -->
+  <div class="ar-label" id="ar-label" onclick="openResult()">
+    <div class="al-category" id="al-category"></div>
+    <div class="al-name" id="al-name"></div>
+    <div class="al-price" id="al-price"></div>
+    <div class="al-match" id="al-match"></div>
+    <div class="al-tap">tap for details</div>
+  </div>
+
+  <!-- CONFIDENCE -->
+  <div class="conf-overlay" id="conf-overlay">
+    <div class="conf-title">Identifying</div>
+    <div class="conf-track"><div class="conf-fill" id="conf-fill"></div></div>
+    <div class="conf-pct" id="conf-pct">0%</div>
+    <div class="conf-label" id="conf-label">scanning...</div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="side-btn" onclick="toggleWatchlist()">♡ <span style="font-size:9px;color:var(--mid);position:absolute;margin-top:28px;" id="watch-count"></span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+      <div class="shutter" id="shutter" onclick="capture()">
+        <div class="shutter-inner"></div>
+        <div class="shutter-label" id="shutter-label">identify</div>
+      </div>
+    </div>
+    <div class="side-btn" onclick="switchCamera()">⟳</div>
+  </div>
+
+</div>
+
+<!-- RESULT SHEET -->
+<div class="result-sheet" id="result-sheet">
+  <div class="rs-drag" onclick="closeResult()"></div>
+  <div class="rs-header">
+    <div class="rs-emoji" id="rs-emoji"></div>
+    <div class="rs-info">
+      <div class="rs-category" id="rs-category"></div>
+      <div class="rs-name" id="rs-name"></div>
+      <div class="rs-brand" id="rs-brand"></div>
+    </div>
+    <button class="rs-close" onclick="closeResult()">✕</button>
+  </div>
+  <div class="rs-desc" id="rs-desc"></div>
+  <div class="rs-confidence">
+    <span class="rs-conf-label">Vision confidence</span>
+    <div class="rs-conf-track"><div class="rs-conf-fill" id="rs-conf-fill" style="width:0%"></div></div>
+    <span class="rs-conf-pct" id="rs-conf-pct"></span>
+  </div>
+  <div class="rs-retailers-label">Find it at</div>
+  <div class="rs-retailers" id="rs-retailers"></div>
+  <div class="rs-actions">
+    <button class="rs-watch" id="rs-watch-btn" onclick="addToWatchlist()">+ Track price</button>
+    <button class="rs-share" onclick="shareItem()">↗</button>
+  </div>
+</div>
+
+<!-- WATCHLIST -->
+<div class="watchlist-panel" id="watchlist-panel">
+  <div class="wp-header">
+    <div class="wp-title">Watchlist</div>
+    <button class="wp-close" onclick="toggleWatchlist()">✕</button>
+  </div>
+  <div id="watchlist-items"></div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let apiKey = '';
+let demoMode = false;
+let stream = null;
+let facingMode = 'environment';
+let scanning = false;
+let currentResult = null;
+let watchlist = JSON.parse(localStorage.getItem('findit-watchlist') || '[]');
+
+// ── PRODUCT CATALOGUE ──────────────────────────────────
+// Maps Vision API labels → product matches
+const catalogue = {
+  // Furniture
+  chair: { emoji:'🪑', category:'Furniture', name:'Tolix Model A Chair', brand:'Tolix · France · Est. 1934', desc:'Original galvanised steel bistro chair. Designed by Xavier Pauchard. Stackable, weatherproof. Found in Parisian bistros and design hotels worldwide.', price:'from £98', retailers:[{n:"Heal's",p:'£185'},{n:'Made.com',p:'£149'},{n:'Amazon',p:'£98',best:true}], target:'£85', match:94 },
+  furniture: { emoji:'🛋️', category:'Furniture', name:'Designer Chair', brand:'Identified via Vision AI', desc:'Modern designer seating. Checking retailer database for exact match and best current price.', price:'from £89', retailers:[{n:'Wayfair',p:'£189'},{n:'MADE',p:'£149'},{n:'eBay',p:'£89',best:true}], target:'£80', match:78 },
+  table: { emoji:'🪵', category:'Furniture', name:'Dining Table', brand:'Identified via Vision AI', desc:'Contemporary dining table. Cross-referencing design databases for brand and model identification.', price:'from £199', retailers:[{n:'Habitat',p:'£399'},{n:'MADE',p:'£299'},{n:'Wayfair',p:'£199',best:true}], target:'£180', match:72 },
+
+  // Clothing / Fashion
+  jacket: { emoji:'🧥', category:'Outerwear', name:'Wax Jacket', brand:'Barbour · British Heritage', desc:'Classic waxed cotton outerwear. Barbour International or similar British heritage brand. Multiple colourways available.', price:'from £199', retailers:[{n:'Barbour',p:'£299'},{n:'John Lewis',p:'£249'},{n:'END Clothing',p:'£199',best:true}], target:'£180', match:87 },
+  coat: { emoji:'🧥', category:'Outerwear', name:'Overcoat', brand:'Identified via Vision AI', desc:'Classic tailored overcoat. Checking brand signatures and retailer databases for exact match.', price:'from £120', retailers:[{n:'ASOS',p:'£185'},{n:'Next',p:'£150'},{n:'eBay',p:'£120',best:true}], target:'£100', match:74 },
+  shoe: { emoji:'👟', category:'Footwear', name:'Sneakers / Trainers', brand:'Identified via Vision AI', desc:'Contemporary athletic footwear. Analysing sole profile and upper construction for brand match.', price:'from £65', retailers:[{n:'JD Sports',p:'£110'},{n:'Size?',p:'£95'},{n:'StockX',p:'£65',best:true}], target:'£60', match:81 },
+  sneaker: { emoji:'👟', category:'Footwear', name:'New Balance 990v5', brand:'New Balance · Made in USA', desc:'Premium ENCAP midsole. Pigskin and mesh upper. Made in Massachusetts. The sneaker that defined the modern clean silhouette.', price:'from £155', retailers:[{n:'New Balance',p:'£200'},{n:'Size?',p:'£185'},{n:'StockX',p:'£155',best:true}], target:'£140', match:92 },
+  boot: { emoji:'🥾', category:'Footwear', name:'Chelsea Boots', brand:'Identified via Vision AI', desc:'Classic pull-on ankle boot. Checking leather grade and construction for brand identification.', price:'from £89', retailers:[{n:'ASOS',p:'£140'},{n:'Clarks',p:'£120'},{n:'eBay',p:'£89',best:true}], target:'£80', match:76 },
+  bag: { emoji:'👜', category:'Accessories', name:'Leather Bag', brand:'Identified via Vision AI', desc:'Premium leather carry item. Analysing stitching pattern and hardware for brand identification.', price:'from £45', retailers:[{n:'Harvey Nichols',p:'£350'},{n:'ASOS',p:'£85'},{n:'eBay',p:'£45',best:true}], target:'£40', match:70 },
+
+  // Lighting
+  lamp: { emoji:'🪔', category:'Lighting', name:'Anglepoise Original 1227', brand:'Anglepoise · British · 1935', desc:'Designed by George Carwardine. Spring-balanced arm, precision engineered. Still made in the UK after 90 years.', price:'from £175', retailers:[{n:'Anglepoise',p:'£235'},{n:'John Lewis',p:'£215'},{n:'Utility Design',p:'£175',best:true}], target:'£150', match:91 },
+  light: { emoji:'💡', category:'Lighting', name:'Designer Lamp', brand:'Identified via Vision AI', desc:'Contemporary lighting piece. Cross-referencing design archives for exact model identification.', price:'from £49', retailers:[{n:'Habitat',p:'£120'},{n:'IKEA',p:'£79'},{n:'Amazon',p:'£49',best:true}], target:'£45', match:68 },
+
+  // Watches
+  watch: { emoji:'⌚', category:'Watches', name:'Seiko SKX007 Diver', brand:'Seiko · Japan · Discontinued 2019', desc:'Legendary 200m diver. Discontinued in 2019 causing secondary market prices to rise significantly. Automatic movement, cult following worldwide.', price:'from £195', retailers:[{n:'Chrono24',p:'£220'},{n:'Watchfinder',p:'£265'},{n:'eBay (used)',p:'£195',best:true}], target:'£180', match:89 },
+  clock: { emoji:'🕐', category:'Timepieces', name:'Vintage Clock', brand:'Identified via Vision AI', desc:'Mechanical or quartz timepiece. Checking movement style and case design against collector databases.', price:'from £25', retailers:[{n:'eBay',p:'£85'},{n:'Etsy',p:'£55'},{n:'Vinterior',p:'£25',best:true}], target:'£20', match:65 },
+
+  // Plants
+  plant: { emoji:'🌿', category:'Plants', name:'Monstera Deliciosa', brand:'Swiss Cheese Plant · Tropical', desc:'Native to Central America. The distinctive split leaves develop with maturity. Easy care, thrives in indirect light. One of the most popular houseplants worldwide.', price:'from £14', retailers:[{n:'Patch Plants',p:'£28'},{n:'Bloom & Wild',p:'£24'},{n:'Amazon',p:'£14',best:true}], target:'£12', match:97 },
+  flower: { emoji:'🌸', category:'Plants', name:'Flowering Plant', brand:'Identified via Vision AI', desc:'Ornamental flowering variety. Cross-referencing botanical databases for species identification and care guide.', price:'from £8', retailers:[{n:'Waitrose Garden',p:'£18'},{n:'Dobbies',p:'£12'},{n:'Amazon',p:'£8',best:true}], target:'£7', match:72 },
+
+  // Tech
+  headphones: { emoji:'🎧', category:'Audio', name:'Over-ear Headphones', brand:'Identified via Vision AI', desc:'Premium over-ear audio. Analysing driver housing and cable configuration for brand and model match.', price:'from £49', retailers:[{n:'John Lewis',p:'£289'},{n:'Currys',p:'£199'},{n:'Amazon',p:'£49',best:true}], target:'£45', match:83 },
+  laptop: { emoji:'💻', category:'Technology', name:'Laptop Computer', brand:'Identified via Vision AI', desc:'Portable computer. Checking chassis design and port configuration against manufacturer databases.', price:'from £299', retailers:[{n:'John Lewis',p:'£899'},{n:'Currys',p:'£749'},{n:'Amazon',p:'£299',best:true}], target:'£280', match:71 },
+  phone: { emoji:'📱', category:'Technology', name:'Smartphone', brand:'Identified via Vision AI', desc:'Modern smartphone. Analysing form factor, camera module, and bezel design for brand identification.', price:'from £199', retailers:[{n:'Apple',p:'£999'},{n:'Samsung',p:'£799'},{n:'Back Market',p:'£199',best:true}], target:'£180', match:77 },
+  camera: { emoji:'📷', category:'Photography', name:'Camera', brand:'Identified via Vision AI', desc:'Photographic equipment. Checking body design and lens mount for brand and model identification.', price:'from £89', retailers:[{n:'Jessops',p:'£450'},{n:'Park Cameras',p:'£350'},{n:'MPB (used)',p:'£89',best:true}], target:'£80', match:79 },
+
+  // Homewares
+  mug: { emoji:'☕', category:'Homewares', name:'Ceramic Mug', brand:'Identified via Vision AI', desc:'Handcrafted or production ceramic. Checking glaze style and form for pottery studio identification.', price:'from £8', retailers:[{n:'Anthropologie',p:'£18'},{n:'TOAST',p:'£14'},{n:'Etsy',p:'£8',best:true}], target:'£7', match:65 },
+  vase: { emoji:'🏺', category:'Homewares', name:'Ceramic Vase', brand:'Identified via Vision AI', desc:'Decorative ceramic vessel. Analysing form and glaze finish for maker identification.', price:'from £12', retailers:[{n:'Habitat',p:'£35'},{n:'H&M Home',p:'£22'},{n:'Amazon',p:'£12',best:true}], target:'£10', match:68 },
+  book: { emoji:'📚', category:'Books', name:'Book', brand:'Identified via Vision AI', desc:'Printed publication. Google Lens integration would provide title, author, and ISBN from cover scan. Best price across new and used retailers.', price:'from £3', retailers:[{n:'Waterstones',p:'£16'},{n:'Amazon new',p:'£12'},{n:'eBay used',p:'£3',best:true}], target:'£2', match:85 },
+
+  // Default fallback
+  default: { emoji:'🔍', category:'Object', name:'Unidentified Object', brand:'Analysis in progress', desc:'Vision AI has detected this object but needs more context for a precise product match. Try moving closer or ensuring good lighting.', price:'Checking...', retailers:[{n:'Amazon',p:'Search →'},{n:'Google Shopping',p:'Search →'},{n:'eBay',p:'Search →',best:true}], target:'—', match:45 }
+};
+
+// Demo scenarios for demo mode
+const demoScenarios = [
+  catalogue.chair,
+  catalogue.jacket,
+  catalogue.lamp,
+  catalogue.watch,
+  catalogue.plant,
+  catalogue.sneaker,
+  catalogue.headphones
+];
+let demoIdx = 0;
+
+// ── SETUP ──────────────────────────────────────────────
+function startReal() {
+  demoMode = false;
+  localStorage.setItem('findit-started', '1');
+  document.getElementById('setup-screen').style.display = 'none';
+  initCamera();
+}
+
+function saveKey() {
+  // Legacy — kept for compatibility
+  startReal();
+}
+
+function startDemo() {
+  demoMode = true;
+  apiKey = '';
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('demo-banner').classList.add('show');
+  initCamera();
+}
+
+// ── CAMERA ──────────────────────────────────────────────
+async function initCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+
+  // Progressive constraint fallback — tries ideal first, degrades gracefully
+  const constraintSets = [
+    // iOS Safari + Android ideal
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    // iOS Safari relaxed
+    { video: { facingMode: 'environment' }, audio: false },
+    // Desktop fallback — any camera
+    { video: true, audio: false },
+    // Last resort
+    { video: { facingMode: 'user' }, audio: false }
+  ];
+
+  let lastError = null;
+  for (const constraints of constraintSets) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const video = document.getElementById('camera-feed');
+      video.srcObject = stream;
+
+      // iOS Safari needs explicit play call
+      await video.play().catch(() => {});
+
+      document.getElementById('ui').style.display = 'block';
+      document.getElementById('no-camera').classList.remove('show');
+
+      // Check if we got a rear camera on mobile
+      const track = stream.getVideoTracks()[0];
+      const settings = track.getSettings();
+      if (settings.facingMode === 'user' && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+        document.getElementById('demo-banner').textContent = '⚠ Front camera active — flip for better identification';
+        document.getElementById('demo-banner').classList.add('show');
+        setTimeout(() => document.getElementById('demo-banner').classList.remove('show'), 3000);
+      }
+      return; // success
+    } catch (err) {
+      lastError = err;
+      console.warn('Camera constraint attempt failed:', err.message);
+    }
+  }
+
+  // All attempts failed
+  console.error('All camera attempts failed:', lastError);
+  if (demoMode) {
+    document.getElementById('ui').style.display = 'block';
+    document.getElementById('no-camera').classList.remove('show');
+    document.getElementById('demo-banner').textContent = '⚡ Demo mode — camera unavailable, using simulated scenes';
+    document.getElementById('demo-banner').classList.add('show');
+  } else {
+    document.getElementById('no-camera').classList.add('show');
+  }
+}
+
+function switchCamera() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  // Temporarily show switch indicator
+  const btn = document.querySelector('.side-btn:last-child');
+  if (btn) { btn.textContent = '⟳'; }
+  initCamera();
+}
+
+// ── CAPTURE & IDENTIFY ──────────────────────────────────
+async function capture() {
+  if (scanning) return;
+  scanning = true;
+
+  // Flash
+  const flash = document.getElementById('flash');
+  flash.classList.add('on');
+  setTimeout(() => flash.classList.remove('on'), 120);
+
+  // Update UI
+  setStatus('scanning');
+  document.getElementById('scan-line').classList.add('active');
+  document.getElementById('shutter').classList.add('scanning');
+  document.getElementById('shutter-label').textContent = 'scanning';
+  document.getElementById('vf-hint').textContent = 'identifying...';
+  hideAR();
+  closeResult();
+
+  // Show confidence
+  showConfidence();
+
+  if (demoMode) {
+    await runDemoScan();
+  } else {
+    await runVisionScan();
+  }
+}
+
+async function runDemoScan() {
+  const result = demoScenarios[demoIdx % demoScenarios.length];
+  demoIdx++;
+
+  // Animate confidence
+  await animateConfidence(result.match, result.name);
+  finishScan(result);
+}
+
+async function runVisionScan() {
+  try {
+    // Capture frame from video
+    const video = document.getElementById('camera-feed');
+    const canvas = document.getElementById('capture-canvas');
+
+    // Wait for video to have real dimensions
+    if (!video.videoWidth || video.videoWidth === 0) {
+      // No real camera — fall back to demo
+      console.log('No video frame available, switching to demo scan');
+      await runDemoScan();
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+
+    document.getElementById('conf-label').textContent = 'calling Vision API...';
+
+    // Call Google Cloud Vision API
+    const response = await fetch('/api/vision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageData })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error.message);
+    }
+
+    // Parse Vision API response
+    const result = parseVisionResponse(data.responses[0]);
+    await animateConfidence(result.match, result.name);
+    finishScan(result);
+
+  } catch (err) {
+    console.error('Vision API error:', err);
+    resetScan();
+    setStatus('error');
+    document.getElementById('status-pill').textContent = 'API ERROR';
+    setTimeout(() => setStatus('ready'), 2000);
+    alert('Vision API error: ' + err.message + '\n\nCheck your API key and try again, or use demo mode.');
+  }
+}
+
+function parseVisionResponse(response) {
+  // Extract labels from Vision API
+  const labels = (response.labelAnnotations || []).map(l => l.description.toLowerCase());
+  const webEntities = (response.webDetection?.webEntities || []).map(e => e.description?.toLowerCase() || '');
+  const objects = (response.localizedObjectAnnotations || []).map(o => o.name.toLowerCase());
+
+  console.log('Vision labels:', labels);
+  console.log('Objects:', objects);
+  console.log('Web entities:', webEntities);
+
+  // Match against catalogue
+  const allTerms = [...labels, ...objects, ...webEntities];
+
+  // Priority matching
+  const matchers = [
+    { keys: ['chair', 'seat', 'stool', 'bistro chair', 'tolix'], result: catalogue.chair },
+    { keys: ['jacket', 'coat', 'outerwear', 'blazer', 'barbour'], result: catalogue.jacket },
+    { keys: ['lamp', 'table lamp', 'desk lamp', 'anglepoise', 'lighting fixture'], result: catalogue.lamp },
+    { keys: ['watch', 'wristwatch', 'timepiece', 'seiko', 'diver watch'], result: catalogue.watch },
+    { keys: ['plant', 'houseplant', 'monstera', 'potted plant', 'foliage'], result: catalogue.plant },
+    { keys: ['sneaker', 'trainer', 'new balance', 'running shoe', 'athletic shoe'], result: catalogue.sneaker },
+    { keys: ['shoe', 'footwear', 'boot', 'loafer'], result: catalogue.shoe },
+    { keys: ['headphone', 'earphone', 'audio equipment', 'headset'], result: catalogue.headphones },
+    { keys: ['laptop', 'computer', 'macbook', 'notebook'], result: catalogue.laptop },
+    { keys: ['phone', 'smartphone', 'mobile', 'iphone', 'samsung'], result: catalogue.phone },
+    { keys: ['bag', 'handbag', 'purse', 'tote', 'backpack'], result: catalogue.bag },
+    { keys: ['book', 'novel', 'paperback', 'hardcover'], result: catalogue.book },
+    { keys: ['mug', 'cup', 'coffee cup', 'ceramic'], result: catalogue.mug },
+    { keys: ['flower', 'blossom', 'bouquet'], result: catalogue.flower },
+    { keys: ['table', 'desk', 'coffee table'], result: catalogue.table },
+  ];
+
+  for (const matcher of matchers) {
+    for (const term of allTerms) {
+      for (const key of matcher.keys) {
+        if (term.includes(key) || key.includes(term)) {
+          // Calculate confidence from Vision API score
+          const labelMatch = response.labelAnnotations?.find(l =>
+            matcher.keys.some(k => l.description.toLowerCase().includes(k))
+          );
+          const confidence = labelMatch ? Math.round(labelMatch.score * 100) : matcher.result.match;
+          return { ...matcher.result, match: confidence };
+        }
+      }
+    }
+  }
+
+  // Return default with top label as name
+  const topLabel = labels[0] || 'object';
+  return {
+    ...catalogue.default,
+    name: topLabel.charAt(0).toUpperCase() + topLabel.slice(1),
+    match: response.labelAnnotations?.[0] ? Math.round(response.labelAnnotations[0].score * 100) : 45
+  };
+}
+
+async function animateConfidence(targetPct, name) {
+  return new Promise(resolve => {
+    let pct = 0;
+    document.getElementById('conf-label').textContent = 'analysing ' + name.toLowerCase() + '...';
+    const timer = setInterval(() => {
+      pct += Math.random() * 6 + 2;
+      if (pct >= targetPct) {
+        pct = targetPct;
+        clearInterval(timer);
+        setTimeout(resolve, 400);
+      }
+      document.getElementById('conf-fill').style.width = pct + '%';
+      document.getElementById('conf-pct').textContent = Math.round(pct) + '%';
+    }, 60);
+  });
+}
+
+function finishScan(result) {
+  currentResult = result;
+  hideConfidence();
+  resetScanUI();
+  showAR(result);
+  scanning = false;
+  setStatus('found');
+}
+
+function resetScan() {
+  hideConfidence();
+  resetScanUI();
+  scanning = false;
+}
+
+function resetScanUI() {
+  document.getElementById('scan-line').classList.remove('active');
+  document.getElementById('shutter').classList.remove('scanning');
+  document.getElementById('shutter-label').textContent = 'identify';
+  document.getElementById('vf-hint').textContent = demoMode ? 'tap to simulate' : 'point at anything';
+}
+
+// ── AR OVERLAY ──────────────────────────────────────────
+function showAR(result) {
+  // Position AR box in centre of viewfinder
+  const vf = document.getElementById('viewfinder');
+  const vfRect = vf.getBoundingClientRect();
+  const phoneRect = document.getElementById('camera-feed').getBoundingClientRect();
+
+  const box = document.getElementById('ar-box');
+  const padding = 20;
+  box.style.left = (vfRect.left - phoneRect.left + padding) + 'px';
+  box.style.top = (vfRect.top - phoneRect.top + padding) + 'px';
+  box.style.width = (vfRect.width - padding * 2) + 'px';
+  box.style.height = (vfRect.height - padding * 2) + 'px';
+  box.classList.add('active');
+
+  // Position AR label
+  const label = document.getElementById('ar-label');
+  label.style.left = (vfRect.left - phoneRect.left + padding) + 'px';
+  label.style.top = (vfRect.top - phoneRect.top - 110) + 'px';
+
+  document.getElementById('al-category').textContent = result.category;
+  document.getElementById('al-name').textContent = result.name;
+  document.getElementById('al-price').textContent = result.price;
+  document.getElementById('al-match').textContent = result.match + '% match';
+  label.classList.add('active');
+}
+
+function hideAR() {
+  document.getElementById('ar-box').classList.remove('active');
+  document.getElementById('ar-label').classList.remove('active');
+}
+
+// ── CONFIDENCE UI ──────────────────────────────────────
+function showConfidence() {
+  document.getElementById('conf-fill').style.width = '0%';
+  document.getElementById('conf-pct').textContent = '0%';
+  document.getElementById('conf-overlay').classList.add('active');
+}
+
+function hideConfidence() {
+  document.getElementById('conf-overlay').classList.remove('active');
+}
+
+// ── STATUS ──────────────────────────────────────────────
+function setStatus(state) {
+  const pill = document.getElementById('status-pill');
+  pill.className = 'status-pill';
+  const states = {
+    ready: { text: 'READY', cls: '' },
+    scanning: { text: 'SCANNING', cls: 'scanning' },
+    found: { text: 'IDENTIFIED', cls: 'found' },
+    error: { text: 'ERROR', cls: 'error' }
+  };
+  const s = states[state] || states.ready;
+  pill.textContent = s.text;
+  if (s.cls) pill.classList.add(s.cls);
+
+  if (state === 'found') setTimeout(() => setStatus('ready'), 4000);
+}
+
+// ── RESULT SHEET ────────────────────────────────────────
+function openResult() {
+  if (!currentResult) return;
+  const r = currentResult;
+  document.getElementById('rs-emoji').textContent = r.emoji;
+  document.getElementById('rs-category').textContent = r.category;
+  document.getElementById('rs-name').textContent = r.name;
+  document.getElementById('rs-brand').textContent = r.brand;
+  document.getElementById('rs-desc').textContent = r.desc;
+  document.getElementById('rs-conf-pct').textContent = r.match + '%';
+
+  setTimeout(() => {
+    document.getElementById('rs-conf-fill').style.width = r.match + '%';
+  }, 100);
+
+  document.getElementById('rs-retailers').innerHTML = r.retailers.map(ret => `
+    <div class="ret-row ${ret.best ? 'best' : ''}">
+      <div class="ret-left">
+        <span class="ret-name">${ret.n}</span>
+        ${ret.best ? '<span class="ret-tag">best price</span>' : ''}
+      </div>
+      <span class="ret-price">${ret.p}</span>
+    </div>`).join('');
+
+  const watchBtn = document.getElementById('rs-watch-btn');
+  const isWatched = watchlist.some(w => w.name === r.name);
+  watchBtn.textContent = isWatched ? '✓ Watching' : `+ Track · alert at ${r.target}`;
+  watchBtn.className = 'rs-watch' + (isWatched ? ' added' : '');
+
+  document.getElementById('result-sheet').classList.add('open');
+}
+
+function closeResult() {
+  document.getElementById('result-sheet').classList.remove('open');
+  document.getElementById('rs-conf-fill').style.width = '0%';
+}
+
+// ── WATCHLIST ──────────────────────────────────────────
+function addToWatchlist() {
+  if (!currentResult) return;
+  const r = currentResult;
+
+  if (watchlist.some(w => w.name === r.name)) {
+    document.getElementById('rs-watch-btn').textContent = '✓ Already watching';
+    return;
+  }
+
+  watchlist.push({
+    emoji: r.emoji, name: r.name, brand: r.brand,
+    price: r.price, target: r.target,
+    added: new Date().toLocaleDateString()
+  });
+
+  localStorage.setItem('findit-watchlist', JSON.stringify(watchlist));
+
+  const btn = document.getElementById('rs-watch-btn');
+  btn.textContent = '✓ Watching — alert at ' + r.target;
+  btn.classList.add('added');
+
+  updateWatchCount();
+  renderWatchlist();
+}
+
+function toggleWatchlist() {
+  document.getElementById('watchlist-panel').classList.toggle('open');
+  renderWatchlist();
+}
+
+function renderWatchlist() {
+  const container = document.getElementById('watchlist-items');
+  if (watchlist.length === 0) {
+    container.innerHTML = '<div class="wp-empty">No items yet.<br>Identify something and track its price.</div>';
+    return;
+  }
+  container.innerHTML = watchlist.map((item, i) => `
+    <div class="wp-item">
+      <div class="wpi-top">
+        <span class="wpi-emoji">${item.emoji}</span>
+        <div>
+          <div class="wpi-name">${item.name}</div>
+          <div class="wpi-brand">${item.brand}</div>
+        </div>
+      </div>
+      <div class="wpi-bottom">
+        <div>
+          <div class="wpi-price">${item.price}</div>
+          <div class="wpi-target">Alert at ${item.target}</div>
+        </div>
+        <button class="wpi-remove" onclick="removeWatch(${i})">Remove</button>
+      </div>
+    </div>`).join('');
+}
+
+function removeWatch(i) {
+  watchlist.splice(i, 1);
+  localStorage.setItem('findit-watchlist', JSON.stringify(watchlist));
+  updateWatchCount();
+  renderWatchlist();
+}
+
+function updateWatchCount() {
+  const count = document.getElementById('watch-count');
+  count.textContent = watchlist.length > 0 ? watchlist.length : '';
+}
+
+function shareItem() {
+  if (!currentResult) return;
+  if (navigator.share) {
+    navigator.share({
+      title: currentResult.name,
+      text: `Found: ${currentResult.name} — ${currentResult.price}\nIdentified with FindIt AR`,
+      url: window.location.href
+    });
+  } else {
+    alert('Share: ' + currentResult.name + ' — ' + currentResult.price);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────
+// Check HTTPS on mobile (required for camera)
+const isHTTPS = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+
+if (isMobile && !isHTTPS) {
+  // Show HTTPS warning
+  const setupSub = document.querySelector('.setup-sub');
+  if (setupSub) {
+    setupSub.innerHTML = '<strong style="color:#EF4444;">⚠ HTTPS required for camera on mobile.</strong><br>Host this file on HTTPS (Vercel, GitHub Pages, Netlify) to use the real camera. Demo mode works without HTTPS.';
+  }
+}
+
+// Auto-start if previously used
+if (localStorage.getItem('findit-started')) {
+  document.getElementById('setup-screen').style.display = 'none';
+  initCamera();
+}
+
+updateWatchCount();
+renderWatchlist();
+</script>
+</body>
+</html>
